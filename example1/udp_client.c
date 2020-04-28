@@ -1,8 +1,10 @@
-// UDP hole punching example, client code
-// Base UDP code stolen from http://www.abc.se/~m6695/udp.html
-// By Oscar Rodriguez
-// This code is public domain, but you're a complete lunatic
-// if you plan to use this code in any real program.
+/*
+ * UDP hole punching example, client code
+ * Base UDP code stolen from http://www.abc.se/~m6695/udp.html
+ * By Oscar Rodriguez
+ * This code is public domain, but you're a complete lunatic
+ * if you plan to use this code in any real program.
+ */
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -17,10 +19,16 @@
 #define NPACK 10
 #define PORT 9930
 
-// This is our server's IP address. In case you're wondering, this one is an RFC 5737 address.
+/* 
+ * This is our server's IP address. In case you're wondering, this one is an 
+ * RFC 5737 address.
+ */
 #define SRV_IP "78.46.187.177"
 
-// A small struct to hold a UDP endpoint. We'll use this to hold each peer's endpoint.
+/* 
+ * A small struct to hold a UDP endpoint. We'll use this to hold each peer's
+ * endpoint.
+ */
 struct peer
 {
 	unsigned int host;
