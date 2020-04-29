@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
 {
 	struct sockaddr_in si_other;
 	int sockfd, k;
+	int r;
 	unsigned int slen = sizeof(si_other);
 	char buf[BUFLEN];
 	struct peer other;
@@ -83,18 +84,20 @@ int main(int argc, char* argv[])
 	}
 
 	while(1) {
-		if(sendto(sockfd, "hi", 2, 0, (struct sockaddr *)&si_other, slen) < 0) {
+		if((r = sendto(sockfd, "hi", 2, 0, (struct sockaddr *)&si_other, slen)) < 0) {
 			perror("failed to send to peer");
 			goto err_close_sockfd;
 		}
+		printf("send %d bytes to %s:%d\n", inet_ntoa(si_other.sin_addr),
+					ntohs(si_other.sin_port));
 
 		if(recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&si_other, &slen) > 0) {
-			printf("Received packet %s from %s:%d\n", buf, 
+			printf("!!!Received packet %s from %s:%d\n", buf, 
 					inet_ntoa(si_other.sin_addr),
 					ntohs(si_other.sin_port));
 		}
 
-		usleep(50000);
+		usleep(100000);
 	}
 
 	close(sockfd);
