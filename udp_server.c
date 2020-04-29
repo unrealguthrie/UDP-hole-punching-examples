@@ -49,12 +49,14 @@ int main(void)
     if (bind(s, (struct sockaddr*)(&si_me), sizeof(si_me))==-1)
         diep("bind");
  
-    for (i = 0; i < 2; i++) {
+    while(1) {
         if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)(&si_other), &slen)==-1)
             diep("recvfrom");
         peers[i].host = ntohl(si_other.sin_addr.s_addr);
         peers[i].port = ntohs(si_other.sin_port);
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+        printf("Received packet from %s:%d\n", 
+			inet_ntoa(si_other.sin_addr), 
+			ntohs(si_other.sin_port));
     }
 
     for (i = 0; i < 2; i++)
