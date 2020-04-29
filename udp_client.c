@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	int i;
 
 	for(i = 0; i < 5; i++) {
-		printf("Start %d\n", i);
+		printf("Test #%d\n", i);
 		if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 			perror("socket()");
 			return -1;
@@ -81,8 +81,6 @@ int main(int argc, char **argv)
 		}
 
 		close(sockfd);
-		printf("Finished %d\n", i);
-
 		usleep(3000000);
 	}
 
