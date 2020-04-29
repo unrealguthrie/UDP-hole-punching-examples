@@ -36,9 +36,10 @@ struct peer
 	unsigned int port;
 };
 
-int main(int argc, char* argv[])
+int main(int argc, char **argv)
 {
 	struct sockaddr_in si_other;
+	struct sockaddr_in cli;
 	int sockfd, k;
 	int r;
 	unsigned int slen = sizeof(si_other);
@@ -48,6 +49,16 @@ int main(int argc, char* argv[])
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("failed to create socket");
 		return -1;
+	}
+
+	memset(&cli, 0, sizeof(struct sockaddr_in));
+	cli.sin_family = AF_INET;
+	cli.sin_port = htons(4242);
+	cli.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    	if(bind(sockfd, (struct sockaddr *)&cli, sizeof(struct sockaddr_in)) < 0) {
+		perror("failed to bind port");
+		goto err_close_sockfd;
 	}
 
 	/* The server's endpoint data */
@@ -77,6 +88,23 @@ int main(int argc, char* argv[])
 	si_other.sin_port = htons(other.port);
 	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr), 
 			ntohs(si_other.sin_port));
+	
+	close(sockfd);
+
+	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		perror("failed to create socket");
+		return -1;
+	}
+	
+	memset(&cli, 0, sizeof(struct sockaddr_in));
+	cli.sin_family = AF_INET;
+	cli.sin_port = htons(4243);
+	cli.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    	if(bind(sockfd, (struct sockaddr *)&cli, sizeof(struct sockaddr_in)) < 0) {
+		perror("failed to bind port");
+		goto err_close_sockfd;
+	}
 
 	if(fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK) < 0) {
 		perror("failed to set non-blocking");
@@ -97,7 +125,7 @@ int main(int argc, char* argv[])
 					ntohs(si_other.sin_port));
 		}
 
-		usleep(100000);
+		usleep(200000);
 	}
 
 	close(sockfd);
