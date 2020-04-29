@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 	int i, p;
 	uint8_t flg = 0;
 	uint8_t res = 0;
+	struct timeval read_timeout;
 
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket()");
@@ -109,14 +110,18 @@ int main(int argc, char **argv)
 		goto err_close_sockfd;
 	}
 
+	read_timeout.tv_sec = 0;
+	read_timeout.tv_usec = 10;
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof(read_timeout));
+
 	while(1) {
 		if((r = sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len)) < 0) {
 			perror("sendto()");
 			goto err_close_sockfd;
 		}
 
-		printf("Send %d bytes to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
-			si_other.sin_port);
+		printf("Send %d byte(s) to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
+				si_other.sin_port);
 
 		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) < 0) {
 			perror("recvfrom()");
@@ -126,11 +131,11 @@ int main(int argc, char **argv)
 			if(res && flg) {
 				break;
 			}
-			
+
 			flg = 1;
 		}
 	}
-	
+
 	close(sockfd);
 	return 0;
 
