@@ -1,7 +1,12 @@
+CC := gcc
+
 all: server client
+
 server: udp_server.c
-	cc -o $@ $^
+	$(CC) -o $@ $^
+
 client: udp_client.c
-	cc -o $@ $^
+	$(CC) -o $@ $^
+
 clean:
 	rm server client

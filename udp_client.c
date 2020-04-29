@@ -110,10 +110,13 @@ int main(int argc, char **argv)
 	}
 
 	while(1) {
-		if(sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len) < 0) {
+		if((r = sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len)) < 0) {
 			perror("sendto()");
 			goto err_close_sockfd;
 		}
+
+		printf("Send %d bytes to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
+			si_other.sin_port)
 
 		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) < 0) {
 			perror("recvfrom()");
