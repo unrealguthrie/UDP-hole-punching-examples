@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <stdint.h>
 
 #define BUFLEN 512
 #define NPACK 10
@@ -50,6 +51,8 @@ int main(int argc, char **argv)
 	char buf[BUFLEN];
 	struct peer other;
 	int i, p;
+	uint8_t flg = 0;
+	uint8_t res = 0;
 
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket()");
@@ -90,6 +93,41 @@ int main(int argc, char **argv)
 	printf("add peer %s:%d\n",  inet_ntoa(si_other.sin_addr),
 			si_other.sin_port);
 
+	close(sockfd);
+
+	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		perror("socket()");
+		return -1;
+	}
+
+	memset(&cli, 0, s_len);
+	cli.sin_family = AF_INET;
+	cli.sin_port = htons(CLI_PORT);
+	cli.sin_addr.s_addr = htonl(INADDR_ANY);
+	if(bind(sockfd, (struct sockaddr *)&cli, s_len) < 0) {
+		perror("bind()");
+		goto err_close_sockfd;
+	}
+
+	while(1) {
+		if(sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len) < 0) {
+			perror("sendto()");
+			goto err_close_sockfd;
+		}
+
+		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) < 0) {
+			perror("recvfrom()");
+			goto err_close_sockfd;
+		}
+		else {
+			if(res && flg) {
+				break;
+			}
+			
+			flg = 1;
+		}
+	}
+	
 	close(sockfd);
 	return 0;
 
