@@ -47,46 +47,53 @@ int main(int argc, char **argv)
 	unsigned int slen = sizeof(si_other);
 	char buf[BUFLEN];
 	struct peer other;
-	int i;
+	int i, p;
 
-	for(i = 0; i < 5; i++) {
-		printf("Test #%d\n", i);
-		if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-			perror("socket()");
-			return -1;
+	int wait[3] = {3000, 3000000, 10000000};
+
+	for(p = 0; p < 3; p++) {
+		printf("Phase %d:\n", p);
+		for(i = 0; i < 5; i++) {
+			printf("Test #%d\n", i);
+			if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+				perror("socket()");
+				return -1;
+			}
+
+			// server cannot be behind a NAT.
+			memset(&cli, 0, sizeof(struct sockaddr_in));
+			cli.sin_family = AF_INET;
+			cli.sin_port = htons(CLI_PORT);
+			cli.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (bind(sockfd, (struct sockaddr *)&cli, sizeof(struct sockaddr_in)) < 0) {
+				perror("bind()");
+				goto err_close_sockfd;
+			}
+
+			/* The server's endpoint data */
+			memset((char *) &si_other, 0, sizeof(si_other));
+			si_other.sin_family = AF_INET;
+			si_other.sin_port = htons(PORT);
+			if(inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
+				perror("inet_aton()");
+				goto err_close_sockfd;
+			}
+
+			if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0) {
+				perror("sendto()");
+				goto err_close_sockfd;
+			}
+
+			if(recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL) < 0) {
+				perror("recvfrom()");
+				goto err_close_sockfd;
+			}
+
+			printf("Recv(%ld): %s\n", strlen(buf), buf);
+
+			close(sockfd);
+			usleep(wait[p]);
 		}
-
-		// server cannot be behind a NAT.
-		memset(&cli, 0, sizeof(struct sockaddr_in));
-		cli.sin_family = AF_INET;
-		cli.sin_port = htons(CLI_PORT);
-		cli.sin_addr.s_addr = htonl(INADDR_ANY);
-		if (bind(sockfd, (struct sockaddr *)&cli, sizeof(struct sockaddr_in)) < 0) {
-			perror("bind()");
-			goto err_close_sockfd;
-		}
-
-		/* The server's endpoint data */
-		memset((char *) &si_other, 0, sizeof(si_other));
-		si_other.sin_family = AF_INET;
-		si_other.sin_port = htons(PORT);
-		if(inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
-			perror("inet_aton()");
-			goto err_close_sockfd;
-		}
-
-		if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0) {
-			perror("sendto()");
-			goto err_close_sockfd;
-		}
-
-		if(recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL) < 0) {
-			perror("recvfrom()");
-			goto err_close_sockfd;
-		}
-
-		close(sockfd);
-		usleep(3000000);
 	}
 
 	return 0;
