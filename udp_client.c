@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 			perror("failed to send to peer");
 			goto err_close_sockfd;
 		}
-		printf("send %d bytes to %s:%d\n", inet_ntoa(si_other.sin_addr),
+		printf("send %d bytes to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
 					ntohs(si_other.sin_port));
 
 		if(recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&si_other, &slen) > 0) {
