@@ -56,6 +56,9 @@ int main(void)
 		printf("Received packet from %s:%d\n", 
 				inet_ntoa(si_other.sin_addr), 
 				ntohs(si_other.sin_port));
+
+		if (sendto(s, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0)
+			diep("sendto");
 	}
 
 	close(s);

@@ -76,7 +76,12 @@ int main(int argc, char **argv)
 		}
 
 		if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0) {
-			perror("failed to send to server");
+			perror("sendto()");
+			goto err_close_sockfd;
+		}
+
+		if(recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL) < 0) {
+			perror("recvfrom()");
 			goto err_close_sockfd;
 		}
 
