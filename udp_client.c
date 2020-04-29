@@ -124,6 +124,8 @@ int main(int argc, char **argv)
 				si_other.sin_port);
 
 		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) > 0) {
+			printf("!! Received\n");
+
 			if(res && flg) {
 				break;
 			}
