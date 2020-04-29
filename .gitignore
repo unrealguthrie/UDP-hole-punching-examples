@@ -1,0 +1,6 @@
+# Ignore binary files
+./server
+./client
+
+# I'm using vim
+*.swp
