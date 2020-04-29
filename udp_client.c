@@ -123,15 +123,10 @@ int main(int argc, char **argv)
 		printf("Send %d byte(s) to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
 				si_other.sin_port);
 
-		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) > 0) {
-			printf("!! Received\n");
+		r = recvfrom(sockfd, &res, 1, 0, NULL, NULL);
+		printf("Received %d bytes\n", r);
+		usleep(30000);
 
-			if(res && flg) {
-				break;
-			}
-
-			flg = 1;
-		}
 	}
 
 	close(sockfd);
