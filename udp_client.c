@@ -39,7 +39,7 @@ struct peer
 int main(int argc, char **argv)
 {
 	struct sockaddr_in si_other;
-	struct sockaddr_in cli;
+	struct sockaddr_in peer;
 	int sockfd, k;
 	int r;
 	unsigned int slen = sizeof(si_other);
@@ -91,11 +91,6 @@ int main(int argc, char **argv)
 	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr), 
 			ntohs(si_other.sin_port));
 
-	if(fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK) < 0) {
-		perror("failed to set non-blocking");
-		goto err_close_sockfd;
-	}
-
 	while(1) {
 		if((r = sendto(sockfd, "hi", 2, 0, (struct sockaddr *)&si_other, slen)) < 0) {
 			perror("failed to send to peer");
@@ -104,11 +99,8 @@ int main(int argc, char **argv)
 		printf("send %d bytes to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
 					ntohs(si_other.sin_port));
 
-		if(recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&si_other, &slen) > 0) {
-			printf("!!!Received packet %s from %s:%d\n", buf, 
-					inet_ntoa(si_other.sin_addr),
-					ntohs(si_other.sin_port));
-		}
+		if((r = recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&peer, &slen)) > 0)
+			printf("Received %d bytes\n", r);
 
 		usleep(200000);
 	}
