@@ -18,15 +18,17 @@
 
 #define BUFLEN 512
 #define NPACK 10
-#define PORT 9930
-
-#define CLI_PORT 24242
 
 /* 
- * This is our server's IP address. In case you're wondering, this one is an 
- * RFC 5737 address.
+ * This is our server's IP address and port.
  */
 #define SRV_IP "78.46.187.177"
+#define SERV_PORT 9930
+
+/*
+ * The default-port for peers. 
+ */
+#define CLI_PORT 34242
 
 /* 
  * A small struct to hold a UDP endpoint. We'll use this to hold each peer's
@@ -34,68 +36,61 @@
  */
 struct peer
 {
-	unsigned int host;
-	unsigned int port;
+	unsigned int addr;
+	unsigned short port;
 };
 
 int main(int argc, char **argv)
 {
 	struct sockaddr_in si_other;
 	struct sockaddr_in cli;
-	int sockfd, k;
+	unsigned int s_len = sizeof(struct sockaddr_in);
+	int sockfd;
 	int r;
-	unsigned int slen = sizeof(si_other);
 	char buf[BUFLEN];
 	struct peer other;
 	int i, p;
 
-	int wait[3] = {3000, 3000000, 10000000};
-
-	for(p = 0; p < 3; p++) {
-		printf("Phase %d:\n", p);
-		for(i = 0; i < 5; i++) {
-			printf("Test #%d\n", i);
-			if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-				perror("socket()");
-				return -1;
-			}
-
-			// server cannot be behind a NAT.
-			memset(&cli, 0, sizeof(struct sockaddr_in));
-			cli.sin_family = AF_INET;
-			cli.sin_port = htons(CLI_PORT);
-			cli.sin_addr.s_addr = htonl(INADDR_ANY);
-			if (bind(sockfd, (struct sockaddr *)&cli, sizeof(struct sockaddr_in)) < 0) {
-				perror("bind()");
-				goto err_close_sockfd;
-			}
-
-			/* The server's endpoint data */
-			memset((char *) &si_other, 0, sizeof(si_other));
-			si_other.sin_family = AF_INET;
-			si_other.sin_port = htons(PORT);
-			if(inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
-				perror("inet_aton()");
-				goto err_close_sockfd;
-			}
-
-			if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0) {
-				perror("sendto()");
-				goto err_close_sockfd;
-			}
-
-			if(recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL) < 0) {
-				perror("recvfrom()");
-				goto err_close_sockfd;
-			}
-
-			printf("Recv(%ld): %s\n", strlen(buf), buf);
-
-			close(sockfd);
-			usleep(wait[p]);
-		}
+	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		perror("socket()");
+		return -1;
 	}
 
+	memset(&cli, 0, s_len);
+	cli.sin_family = AF_INET;
+	cli.sin_port = htons(CLI_PORT - 1);
+	cli.sin_addr.s_addr = htonl(INADDR_ANY);
+	if(bind(sockfd, (struct sockaddr *)&cli, s_len) < 0) {
+		perror("bind()");
+		goto err_close_sockfd;
+	}
+
+	/* The server's endpoint data */
+	memset((char *) &si_other, 0, s_len);
+	si_other.sin_family = AF_INET;
+	si_other.sin_port = htons(SERV_PORT);
+	if(inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
+		perror("inet_aton()");
+		goto err_close_sockfd;
+	}
+
+	if(sendto(sockfd, "hi", 2, 0, (struct sockaddr *)&si_other, s_len) < 0) {
+		perror("sendto()");
+		goto err_close_sockfd;
+	}
+
+	if(recvfrom(sockfd, &other, sizeof(struct peer), 0, NULL, NULL) < 0) {
+		perror("recvfrom()");
+		goto err_close_sockfd;
+	}
+
+	si_other.sin_addr.s_addr = htonl(other.addr);
+	si_other.sin_port = CLI_PORT;
+
+	printf("add peer %s:%d\n",  inet_ntoa(si_other.sin_addr),
+			si_other.sin_port);
+
+	close(sockfd);
 	return 0;
 
 err_close_sockfd:

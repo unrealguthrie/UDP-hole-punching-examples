@@ -14,53 +14,69 @@
 #include <string.h>
 
 #define BUFLEN 512
-#define PORT 9930
+#define SERV_PORT 9930
 
-// A small struct to hold a UDP endpoint. We'll use this to hold each client's endpoint.
 struct peer {
-	unsigned int host;
-	unsigned int port;
+	unsigned int addr;
+	unsigned short port;
 };
-
-// Just a function to kill the program when something goes wrong.
-void diep(char *s)
-{
-	perror(s);
-	exit(1);
-}
 
 int main(void)
 {
-	struct sockaddr_in si_me, si_other;
-	int s, i, j, slen=sizeof(si_other);
+	struct sockaddr_in serv;
+	struct sockaddr_in si_other;
+	int s_len = sizeof(struct sockaddr_in);
+	int sockfd, j;
 	char buf[BUFLEN];
 	struct peer peers[2];
-	int n = 0;
+	int i = 0;
 
-	// Create a UDP socket
-	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-		diep("socket");
-
-	// server cannot be behind a NAT.
-	memset((char *) &si_me, 0, sizeof(si_me));
-	si_me.sin_family = AF_INET;
-	si_me.sin_port = htons(PORT);
-	si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (bind(s, (struct sockaddr*)(&si_me), sizeof(si_me))==-1)
-		diep("bind");
-
-	while(1) {
-		if(recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)(&si_other), &slen) < 0)
-			diep("recvfrom");
-
-		printf("Received packet from %s:%d\n", 
-				inet_ntoa(si_other.sin_addr), 
-				ntohs(si_other.sin_port));
-
-		if (sendto(s, "hi\0", 3, 0, (struct sockaddr*)&si_other, slen) < 0)
-			diep("sendto");
+	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		perror("socket()");
+		return -1;
 	}
 
-	close(s);
+	memset(&serv, 0, s_len);
+	serv.sin_family = AF_INET;
+	serv.sin_port = htons(SERV_PORT);
+	serv.sin_addr.s_addr = htonl(INADDR_ANY);
+	if(bind(sockfd, (struct sockaddr *)&serv, s_len) < 0) {
+		perror("bind()");
+		return -1;
+	}
+
+	for(i = 0; i < 2; i++) {
+		if(recvfrom(sockfd, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &s_len) < 0) {
+			perror("recvfrom()");
+			goto err_close_sockfd;
+		}
+
+		printf("Received packet from %s:%d\n", 
+				inet_ntoa(si_other.sin_addr),
+				ntohs(si_other.sin_port));
+
+		peers[i].addr = ntohl(si_other.sin_addr.s_addr);
+		peers[i].port = ntohs(si_other.sin_port);
+	}
+
+	for (i = 0; i < 2; i++) {
+		si_other.sin_addr.s_addr = htonl(peers[i].addr);
+		si_other.sin_port = htons(peers[i].port);
+
+		printf("Sending to %s:%d\n", inet_ntoa(si_other.sin_addr), 
+				ntohs(si_other.sin_port));
+
+		if (sendto(sockfd, &peers[i ^ 1], sizeof(struct peer), 0, 
+					(struct sockaddr *)&si_other, s_len) < 0) {
+			perror("sendto()");
+			goto err_close_sockfd;
+		}
+	}	
+
+	close(sockfd);
 	return 0;
+
+err_close_sockfd:
+	close(sockfd);
+	return -1;
 }
