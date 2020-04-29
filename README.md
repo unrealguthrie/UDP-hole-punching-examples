@@ -1,6 +1,8 @@
+A simple UDP hole punching example originally taken from
+http://www.rapapaing.com/blog/?p=24.
+To use it you need to set SRV_IP in client_udp.c.
 
-A small collection of example programs to show how UDP hole punching
-can be done. Hole punching is a mechanism to access computers in
-private networks behind routers (Network Address Translation).
-
-Public Domain / CC0
+A drawback is that it always punches the one port
+that the server is using to talk to the other client.
+It would be better to test the ports above that port
+for a higher success rate.

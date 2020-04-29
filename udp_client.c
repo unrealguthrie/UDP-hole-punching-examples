@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #define BUFLEN 512
 #define NPACK 10
@@ -57,34 +58,43 @@ int main(int argc, char* argv[])
 		goto err_close_sockfd;
 	}
 
-	if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)(&si_other), slen) < 0) {
+	if(sendto(sockfd, "hi", 2, 0, (struct sockaddr*)&si_other, slen) < 0) {
 		perror("failed to send to server");
 		goto err_close_sockfd;
 	}
 
-	if(recvfrom(sockfd, &other, sizeof(other), 0, (struct sockaddr*)(&si_other), &slen) < 0) {
+	if(recvfrom(sockfd, &other, sizeof(struct peer), 0, 
+				(struct sockaddr*)&si_other, &slen) < 0) {
 		perror("failed to receive from server");
 		goto err_close_sockfd;
 	}
 
-	printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+	printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), 
+			ntohs(si_other.sin_port));
 
 	si_other.sin_addr.s_addr = htonl(other.host);
 	si_other.sin_port = htons(other.port);
-	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr), 
+			ntohs(si_other.sin_port));
 
-	for (k = 0; k < 10; k++) {
-		if (sendto(sockfd, "hi", 2, 0, (struct sockaddr *)(&si_other), slen) < 0) {
+	if(fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK) < 0) {
+		perror("failed to set non-blocking");
+		goto err_close_sockfd;
+	}
+
+	while(1) {
+		if(sendto(sockfd, "hi", 2, 0, (struct sockaddr *)&si_other, slen) < 0) {
 			perror("failed to send to peer");
 			goto err_close_sockfd;
 		}
 
-		if (recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)(&si_other), &slen) < 0) {
-			perror("failed to receive from peer");
-			goto err_close_sockfd;
+		if(recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&si_other, &slen) > 0) {
+			printf("Received packet %s from %s:%d\n", buf, 
+					inet_ntoa(si_other.sin_addr),
+					ntohs(si_other.sin_port));
 		}
 
-		printf("Received packet %s from %s:%d\n", buf, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+		usleep(50000);
 	}
 
 	close(sockfd);
