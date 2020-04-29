@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 		}
 
 		printf("Send %d bytes to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
-			si_other.sin_port)
+			si_other.sin_port);
 
 		if(recvfrom(sockfd, &res, 1, 0, NULL, NULL) < 0) {
 			perror("recvfrom()");
