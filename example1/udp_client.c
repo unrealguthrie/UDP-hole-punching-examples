@@ -101,6 +101,8 @@ int main(int argc, char **argv)
 				perror("sendto()");
 				goto err_close_sock;
 			}
+
+			usleep(10000);
 		}
 	}
 
