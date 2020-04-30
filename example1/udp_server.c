@@ -74,7 +74,10 @@ int main(int argc, char **argv)
 		printf("Sending to %s:%d\n", inet_ntoa(si_other.sin_addr),
 				ntohs(si_other.sin_port));
 
-		if(sendto(sock, &peers[i ^ 1], p_sz, 0, s_other, s_sz) < 0) {
+		memcpy(buf, &peers[i ^ 1], p_sz);
+		*(buf + p_sz) = i;
+
+		if(sendto(sock, buf, p_sz + 1, 0, s_other, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
 		}

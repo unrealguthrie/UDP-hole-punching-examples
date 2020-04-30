@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #define BUFLEN 512
@@ -37,13 +38,15 @@ struct peer
 int main(int argc, char **argv)
 {
 	struct sockaddr_in si_other;
+	struct sockaddr_in si_recv;
 	unsigned int s_sz = sizeof(struct sockaddr_in);
 	int sock;
-	int i;
+	int p, i;
 	char buf[BUFLEN];
 	struct peer other;
 	unsigned int p_sz = sizeof(struct peer);
 	struct sockaddr *si_ptr = (struct sockaddr *)&si_other;
+	uint8_t flg;
 
 	if((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket()");
@@ -63,30 +66,42 @@ int main(int argc, char **argv)
 		goto err_close_sock;
 	}
 
-	if(recvfrom(sock, &other, p_sz, 0, si_ptr, &s_sz) < 0) {
+	if(recvfrom(sock, buf, BUFLEN, 0, si_ptr, &s_sz) < 0) {
 		perror("recv()");
 		goto err_close_sock;
 	}
 
+	memcpy(&other, buf, p_sz);
+	flg = *(buf + p_sz);
+
 	si_other.sin_addr.s_addr = htonl(other.addr);
 	si_other.sin_port = htons(other.port);
 	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr),
-			ntohs(si_other.sin_port));
+		ntohs(si_other.sin_port));
 
-	for(i = 0; i < 10; i++) {
+	printf("Set flags: %d\n", flg);
+
+	if(flg == 0) {
 		if(sendto(sock, "hi", 2, 0, si_ptr, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
 		}
 
-		if(recvfrom(sock, buf, BUFLEN, 0, si_ptr, &s_sz) < 0) {
-			perror("recvfrom()");
-			goto err_close_sock;
+		if(recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
+			printf("Received packet %s from %s:%d\n", buf, 
+				inet_ntoa(si_recv.sin_addr),
+				ntohs(si_recv.sin_port));
 		}
+	}
+	else if(flg == 1) {
+		for(i = 0; i < 10; i++) {
+			si_other.sin_port = htons(other.port + i);
 
-		printf("Received packet %s from %s:%d\n", buf, 
-				inet_ntoa(si_other.sin_addr),
-				ntohs(si_other.sin_port));
+			if(sendto(sock, "hi", 2, 0, si_ptr, s_sz) < 0) {
+				perror("sendto()");
+				goto err_close_sock;
+			}
+		}
 	}
 
 err_close_sock:
