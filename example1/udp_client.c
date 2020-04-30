@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
-	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	memset(&si_other, 0, s_sz);
 	si_other.sin_family = AF_INET;
