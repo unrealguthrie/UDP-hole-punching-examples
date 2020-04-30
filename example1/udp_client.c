@@ -52,10 +52,6 @@ int main(int argc, char **argv)
 		perror("socket()");
 		return -1;
 	}
-	
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	memset(&si_other, 0, s_sz);
 	si_other.sin_family = AF_INET;
@@ -74,6 +70,10 @@ int main(int argc, char **argv)
 		perror("recv()");
 		goto err_close_sock;
 	}
+
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	memcpy(&other, buf, p_sz);
 	si_other.sin_addr.s_addr = htonl(other.addr);
