@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
 	printf("Set flags: %d\n", flg);
 
-	if(flg == 0) {
+	if(flg == 1) {
 		if(sendto(sock, "hi", 2, 0, si_ptr, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 				ntohs(si_recv.sin_port));
 		}
 	}
-	else if(flg == 1) {
+	else if(flg == 0) {
 		for(i = 0; i < 10; i++) {
 			si_other.sin_port = htons(other.port + i);
 
