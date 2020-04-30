@@ -61,15 +61,6 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	memset(&cli, 0, s_len);
-	cli.sin_family = AF_INET;
-	cli.sin_port = htons(CLI_PORT - 1);
-	cli.sin_addr.s_addr = htonl(INADDR_ANY);
-	if(bind(sockfd, (struct sockaddr *)&cli, s_len) < 0) {
-		perror("bind()");
-		goto err_close_sockfd;
-	}
-
 	/* The server's endpoint data */
 	memset((char *) &si_other, 0, s_len);
 	si_other.sin_family = AF_INET;
@@ -111,20 +102,22 @@ int main(int argc, char **argv)
 		goto err_close_sockfd;
 	}
 
-	if((r = sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len)) < 0) {
-		perror("sendto()");
-		goto err_close_sockfd;
-	}
-
 	printf("Send %d byte(s) to %s:%d\n", r, inet_ntoa(si_other.sin_addr),
-			si_other.sin_port);
+			ntohs(si_other.sin_port));
 
 	while(1) {
+		if((r = sendto(sockfd, &flg, 1, 0, (struct sockaddr *)&si_other, s_len)) < 0) {
+			perror("sendto()");
+			goto err_close_sockfd;
+		}
+
 		if((r = recvfrom(sockfd, buf, 10, 0, (struct sockaddr *)&test, &s_len)) > 0) {
 			printf("Received %d byte(s) from %s:%d\n", r, 
 					inet_ntoa(test.sin_addr),
 					ntohs(test.sin_port));
 		}
+
+		usleep(20000);
 	}
 
 	close(sockfd);
