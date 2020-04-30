@@ -82,8 +82,8 @@ int main(int argc, char **argv)
 		ntohs(si_other.sin_port));
 
 	for(p = 0; p < 10; p++) {
-		for(i = 0; i < 10; i++) {
-			si_other.sin_port = htons(other.port + i);
+		for(i = 0; i < 20; i++) {
+			si_other.sin_port = htons(other.port + i - 10);
 
 			if(sendto(sock, "hi", 2, 0, si_ptr, s_sz) < 0) {
 				perror("sendto()");
