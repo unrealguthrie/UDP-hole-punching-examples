@@ -18,7 +18,7 @@
 #define PORT 9930
  
 // This is our server's IP address. In case you're wondering, this one is an RFC 5737 address.
-#define SRV_IP ""78.46.187.177 
+#define SRV_IP "78.46.187.177"
 //#define SRV_IP "127.0.0.1"
  
 // A small struct to hold a UDP endpoint. We'll use this to hold each peer's endpoint.
