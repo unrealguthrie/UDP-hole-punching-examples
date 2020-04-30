@@ -46,12 +46,16 @@ int main(int argc, char **argv)
 	struct peer other;
 	unsigned int p_sz = sizeof(struct peer);
 	struct sockaddr *si_ptr = (struct sockaddr *)&si_other;
-	uint8_t flg;
+	struct timeval tv;
 
 	if((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket()");
 		return -1;
 	}
+	
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	memset(&si_other, 0, s_sz);
 	si_other.sin_family = AF_INET;
@@ -72,28 +76,12 @@ int main(int argc, char **argv)
 	}
 
 	memcpy(&other, buf, p_sz);
-	flg = *(buf + p_sz);
-
 	si_other.sin_addr.s_addr = htonl(other.addr);
 	si_other.sin_port = htons(other.port);
 	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr),
 		ntohs(si_other.sin_port));
 
-	printf("Set flags: %d\n", flg);
-
-	if(flg == 1) {
-		if(sendto(sock, "hi", 2, 0, si_ptr, s_sz) < 0) {
-			perror("sendto()");
-			goto err_close_sock;
-		}
-
-		if(recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
-			printf("Received packet %s from %s:%d\n", buf, 
-				inet_ntoa(si_recv.sin_addr),
-				ntohs(si_recv.sin_port));
-		}
-	}
-	else if(flg == 0) {
+	for(p = 0; p < 10; p++) {
 		for(i = 0; i < 10; i++) {
 			si_other.sin_port = htons(other.port + i);
 
@@ -101,8 +89,13 @@ int main(int argc, char **argv)
 				perror("sendto()");
 				goto err_close_sock;
 			}
-
 			usleep(10000);
+		}
+		
+		if(recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
+			printf("Received packet %s from %s:%d\n", buf, 
+				inet_ntoa(si_recv.sin_addr),
+				ntohs(si_recv.sin_port));
 		}
 	}
 
