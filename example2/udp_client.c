@@ -66,6 +66,8 @@ int main(int argc, char **argv)
 		socks[i].fd = -1;
 	}
 
+	FD_ZERO(&rfds);
+
 	/*
 	 * Initialize all sockets and set them on different ports.
 	 */
@@ -75,6 +77,7 @@ int main(int argc, char **argv)
 			return -1;
 		}
 
+		FD_SET(socks[i].fd, &rfds);
 		socks[i].port = SOCK_PORT + i;
 		socks[i].used = 0;
 
@@ -135,11 +138,9 @@ int main(int argc, char **argv)
 		}
 
 		for(i = 0; i < SOCK_NUM; i++) {
-			FD_ZERO(&rfds);
-			FD_SET(socks[i].fd, &rfds);
-
 			printf("Wait for socket %d\n", i);
-			if(select(socks[i].fd + 1, &rfds, NULL, NULL, &tv) > 0) {
+			if(select(SOCK_NUM + 1, &rfds, NULL, NULL, &tv) > 0) {
+				printf("Etto\n");
 				if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
 					printf("Received packet %s from %s:%d\n", buf, 
 						inet_ntoa(si_recv.sin_addr),
