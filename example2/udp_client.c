@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/select.h>
 
 #define BUFLEN 512
 #define NPACK 10
@@ -137,17 +138,18 @@ int main(int argc, char **argv)
 			goto err_close_sock;
 		}
 
-		for(i = 0; i < SOCK_NUM; i++) {
-			printf("Wait for socket %d\n", i);
-			if(select(SOCK_NUM + 1, &rfds, NULL, NULL, &tv) > 0) {
-				printf("Etto\n");
-				if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
-					printf("Received packet %s from %s:%d\n", buf, 
+		if(select(SOCK_NUM + 1, &rfds, NULL, NULL, &tv) > 0) {
+			for(i = 0; i < SOCK_NUM; i++) {
+				if(FD_ISSET(socks[i].fd, &rfds)) {
+					if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
+						printf("Received packet %s from %s:%d\n", buf, 
 						inet_ntoa(si_recv.sin_addr),
 						ntohs(si_recv.sin_port));
+					}
 				}
 			}
 		}
+
 	}
 
 err_close_sock:
