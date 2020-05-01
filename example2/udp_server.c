@@ -25,6 +25,7 @@
 struct peer {
 	unsigned int addr;
 	unsigned short port;
+	unsigned short alias;
 };
 
 int main(int argc, char **argv)
@@ -61,7 +62,8 @@ int main(int argc, char **argv)
 			goto err_close_sock;
 		}
 		peers[i].addr = ntohl(si_other.sin_addr.s_addr);
-		peers[i].port = ntohs(*(unsigned short *)buf);
+		peers[i].port = ntohs(si_other.sin_port);
+		peers[i].alias = *(unsigned short *)buf;
 		printf("Received packet from %s:%d\n", 
 				inet_ntoa(si_other.sin_addr),
 				ntohs(si_other.sin_port));

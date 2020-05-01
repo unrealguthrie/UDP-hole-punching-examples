@@ -108,22 +108,27 @@ int main(int argc, char **argv)
 		goto err_close_sock;
 	}
 
+	printf("Send to server\n");
 	if(sendto(socks[0].fd, &socks[1].port, sizeof(unsigned short), 0, si_ptr, s_sz) < 0) {
 		perror("sendto()");
 		goto err_close_sock;
 	}
 
+	printf("Receive from server\n");
 	if(recvfrom(socks[0].fd, &other, p_sz, 0, si_ptr, &s_sz) < 0) {
 		perror("recv()");
 		goto err_close_sock;
 	}
 
+	printf("Init client\n");
 	si_other.sin_addr.s_addr = htonl(other.addr);
 	si_other.sin_port = htons(other.port);
 	printf("add peer %s:%d\n", inet_ntoa(si_other.sin_addr),
 		ntohs(si_other.sin_port));
 
 	for(p = 0; p < 10; p++) {
+		printf("Send packet to %s:%d\n", inet_ntoa(si_other.sin_addr),
+			ntohs(si_other.sin_port));
 		if(sendto(socks[1].fd, "hi\0", 3, 0, si_ptr, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
@@ -133,6 +138,7 @@ int main(int argc, char **argv)
 			FD_ZERO(&rfds);
 			FD_SET(socks[i].fd, &rfds);
 
+			printf("Wait for socket %d\n", i);
 			if(select(socks[i].fd + 1, &rfds, NULL, NULL, &tv) > 0) {
 				if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
 					printf("Received packet %s from %s:%d\n", buf, 
