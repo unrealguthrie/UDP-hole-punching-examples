@@ -93,15 +93,6 @@ int main(int argc, char **argv)
 			perror("bind()");
 			goto err_close_sock;
 		}
-
-		/*
-		 * Set port non-blocking, if it's not the srver-port.
-		 */
-		if(i != 0) {
-			if(fcntl(socks[i].fd, F_SETFL, O_NONBLOCK) < 0) {
-				goto err_close_sock;	
-			}
-		}
 	}
 
 	memset(&si_other, 0, s_sz);
@@ -138,16 +129,10 @@ int main(int argc, char **argv)
 			goto err_close_sock;
 		}
 
-		if(select(SOCK_NUM + 1, &rfds, NULL, NULL, &tv) > 0) {
-			for(i = 0; i < SOCK_NUM; i++) {
-				if(FD_ISSET(socks[i].fd, &rfds)) {
-					if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
-						printf("Received packet %s from %s:%d\n", buf, 
-						inet_ntoa(si_recv.sin_addr),
-						ntohs(si_recv.sin_port));
-					}
-				}
-			}
+		if(recvfrom(socks[1].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
+			printf("Received packet %s from %s:%d\n", buf, 
+			inet_ntoa(si_recv.sin_addr),
+			ntohs(si_recv.sin_port));
 		}
 
 	}
