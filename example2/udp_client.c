@@ -82,6 +82,10 @@ int main(int argc, char **argv)
 		socks[i].port = SOCK_PORT + i;
 		socks[i].used = 0;
 
+		if(setsockopt(socks[i].fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+    			perror("Error");
+		}
+
 		/*
 		 * Bind the socket to the designated port-number.
 		 */
