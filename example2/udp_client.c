@@ -82,10 +82,6 @@ int main(int argc, char **argv)
 		socks[i].port = SOCK_PORT + i;
 		socks[i].used = 0;
 
-		if(setsockopt(socks[i].fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-    			perror("Error");
-		}
-
 		/*
 		 * Bind the socket to the designated port-number.
 		 */
@@ -119,6 +115,11 @@ int main(int argc, char **argv)
 		goto err_close_sock;
 	}
 
+
+	if(setsockopt(socks[1].fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+    		perror("Error");
+	}
+
 	printf("Init client\n");
 	si_other.sin_addr.s_addr = htonl(other.addr);
 	si_other.sin_port = htons(other.port);
@@ -128,6 +129,7 @@ int main(int argc, char **argv)
 	for(p = 0; p < 10; p++) {
 		printf("Send packet to %s:%d\n", inet_ntoa(si_other.sin_addr),
 			ntohs(si_other.sin_port));
+
 		if(sendto(socks[1].fd, "hi\0", 3, 0, si_ptr, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
