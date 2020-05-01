@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define BUFLEN 512
 #define NPACK 10
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
 	tv.tv_usec = 20000;
 
 	for(i = 0; i < SOCK_NUM; i++) {
-		soccks[i].fd = -1;
+		socks[i].fd = -1;
 	}
 
 	/*
@@ -107,12 +108,12 @@ int main(int argc, char **argv)
 		goto err_close_sock;
 	}
 
-	if(sendto(socks[i].fd, &sock[i].port, sizeof(unsigned short), 0, si_ptr, s_sz) < 0) {
+	if(sendto(socks[0].fd, &socks[1].port, sizeof(unsigned short), 0, si_ptr, s_sz) < 0) {
 		perror("sendto()");
 		goto err_close_sock;
 	}
 
-	if(recvfrom(socks[i].fd, &other, p_sz, 0, si_ptr, &s_sz) < 0) {
+	if(recvfrom(socks[0].fd, &other, p_sz, 0, si_ptr, &s_sz) < 0) {
 		perror("recv()");
 		goto err_close_sock;
 	}
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
 		ntohs(si_other.sin_port));
 
 	for(p = 0; p < 10; p++) {
-		if(sendto(sock, "hi\0", 3, 0, si_ptr, s_sz) < 0) {
+		if(sendto(socks[1].fd, "hi\0", 3, 0, si_ptr, s_sz) < 0) {
 			perror("sendto()");
 			goto err_close_sock;
 		}
@@ -132,8 +133,8 @@ int main(int argc, char **argv)
 			FD_ZERO(&rfds);
 			FD_SET(socks[i].fd, &rfds);
 
-			if(select(socks[i].fd, &rfds, NULL, NULL, &tv) > 0) {
-				if(recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
+			if(select(socks[i].fd + 1, &rfds, NULL, NULL, &tv) > 0) {
+				if(recvfrom(socks[i].fd, buf, BUFLEN, 0, (struct sockaddr *)&si_recv, &s_sz) > 0) {
 					printf("Received packet %s from %s:%d\n", buf, 
 						inet_ntoa(si_recv.sin_addr),
 						ntohs(si_recv.sin_port));
