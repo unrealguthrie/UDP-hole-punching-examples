@@ -6,8 +6,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define PORT 4242
-#define PCK_NUM 10
+#define PCK_NUM 5
 
 int main(int argc, char **argv)
 {
@@ -24,12 +23,16 @@ int main(int argc, char **argv)
 	int msg_len = strlen(msg);
 	char buf[100];
 	int r;
+	int flg = 0;
 	struct timeval tv;
+	int port;
 
-	if(argc < 2) {
-		printf("usage: %s <addr>\n", argv[0]);
+	if(argc < 3) {
+		printf("usage: %s <addr> <port>\n", argv[0]);
 		return 0;
 	}
+
+	port = atoi(argv[2]);
 
 	/* Create the socket */
 	if((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -38,14 +41,14 @@ int main(int argc, char **argv)
 	}
 
 	/* Set timeout for receive */
-	tv.tv_sec = 1;
+	tv.tv_sec = 2;
 	tv.tv_usec = 0;
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof tv);
 
 	/* Bind the socket to the predefined port */
 	memset(&cli, 0, s_sz);
 	cli.sin_family = AF_INET;
-	cli.sin_port = htons(PORT);
+	cli.sin_port = htons(port);
 	cli.sin_addr.s_addr = htonl(INADDR_ANY);
 	if(bind(sockfd, cli_ptr, s_sz) < 0) {
 		perror("bind()");
@@ -55,13 +58,14 @@ int main(int argc, char **argv)
 	/* Configure the data for the peer */
 	memset(&peer, 0, s_sz);
 	peer.sin_family = AF_INET;
-	peer.sin_port = htons(PORT);
+	peer.sin_port = htons(port);
 	if(inet_pton(AF_INET, argv[1], &peer.sin_addr) < 1) {
 		perror("inet_pton()");
 		goto err_close_sockfd;
 	}
 
 	while(1) {
+		printf("Send\n");
 		for(i = 0; i < PCK_NUM; i++) {
 			if(sendto(sockfd, msg, msg_len, 0, peer_ptr, s_sz) < 0) {
 				perror("sendto()");
@@ -69,6 +73,7 @@ int main(int argc, char **argv)
 			}
 		}
 
+		printf("Wait\n");
 		if((r = recvfrom(sockfd, buf, 100, 0, NULL, NULL)) > 0) {
 			buf[r] = 0;
 			printf("Recv %d: %s\n", r, buf);
